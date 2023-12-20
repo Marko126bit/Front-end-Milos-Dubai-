@@ -1,0 +1,18 @@
+<!-- templates/create_storage.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Storage</title>
+</head>
+<body>
+    <h1>Create New Storage</h1>
+    <form method="post">
+        {{ form.hidden_tag() }}
+        {{ form.name.label }} {{ form.name }}<br>
+        {{ form.submit }}
+    </form>
+</body>
+</html>
