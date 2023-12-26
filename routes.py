@@ -1,9 +1,10 @@
 # routes.py
 
+from http.client import FORBIDDEN
 from flask import abort, render_template, request, url_for, flash, redirect
 from .forms import RegistrationForm, LoginForm, StorageForm
 from .models import User, Storage
-from .extensions import db, bcrypt
+from .extensions import db, bcrypt, cache
 from flask_login import login_user, current_user, logout_user, login_required
 
 
@@ -53,30 +54,51 @@ def configure_routes(app):
      form = StorageForm()
      if form.validate_on_submit():
         storage_type = request.form.get('storage_type')
-        storage = Storage(name=form.name.data, user_id=current_user.id)
-
-        # Define capacity based on storage type
         if storage_type == 'small':
-            storage.capacity = 128  # Let's say small storage is 128 units
+            # Logic to create small storage
             flash('Small storage created!', 'success')
         elif storage_type == 'central':
-            storage.capacity = 1024  # And central storage is 1024 units
+            # Logic to create central storage
             flash('Central storage created!', 'success')
-        
+        # Assuming the Storage model has a 'name' field and a foreign key 'user_id'
+        storage = Storage(name=form.name.data, user_id=current_user.id)
         db.session.add(storage)
         db.session.commit()
-        return redirect(url_for('view_storages'))  # Redirect to the storage overview
-        
+        return redirect(url_for('view_storages'))  # Adjust to the correct route
      return render_template('create_storage.html', form=form)
-    
+
     @app.route('/main_storage')
     @login_required
     def main_storage():
      storage_items = Storage.query.filter_by(user_id=current_user.id).all()
      return render_template('main_storage.html', storage_items=storage_items)
-    
+
     @app.route('/storages')
     @login_required
     def view_storages():
      storages = Storage.query.filter_by(user_id=current_user.id).all()
-     return render_template('view_storages.html', storages=storages)
+     return render_template('view_storage.html', storages=storages)
+
+    @app.errorhandler(403)
+    def forbidden(e):
+     return render_template('403.html'), 403  # Ensure you have a 403.html template
+
+    @app.route('/edit_storage/<int:storage_id>', methods=['GET', 'POST'])
+    @login_required
+    def edit_storage(storage_id):
+     storage = Storage.query.get_or_404(storage_id)
+     if storage.user_id != current_user.id:
+        abort(403)  # HTTP Forbidden status code
+    # Present a form and handle editing the storage
+    # return render_template('edit_storage.html', storage=storage)
+
+    @app.route('/delete_storage/<int:storage_id>')
+    @login_required
+    def delete_storage(storage_id):
+     storage = Storage.query.get_or_404(storage_id)
+     if storage.user_id != current_user.id:
+        abort(403)  # HTTP Forbidden status code
+     db.session.delete(storage)
+     db.session.commit()
+     flash('Storage deleted successfully', 'success')
+     return redirect(url_for('view_storages'))
