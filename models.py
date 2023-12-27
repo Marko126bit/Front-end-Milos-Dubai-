@@ -1,6 +1,10 @@
 from .extensions import db
 from flask_login import UserMixin
 
+def get_main_storage_data():
+    # Hypothetical function to retrieve data from the database
+    data = Storage.query.all()  # This is just an example query
+    return data
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
